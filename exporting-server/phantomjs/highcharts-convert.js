@@ -14,7 +14,7 @@
 	var config = {
 		/* define locations of mandatory javascript files */
 		HIGHCHARTS: 'highstock.js',
-		HIGHCHARTS_MORE: 'highcharts-more.js',
+		HIGHCHARTS_MORE: 'highcharts-more',
 		JQUERY: 'jquery-1.8.2.min.js'
 	},
 	/* Internal */
@@ -40,32 +40,18 @@
 		svgElem,
 		timer;
 
-	HC.imagesLoaded = 'Highcharts.images.loaded';
-	HC.optionsParsed = 'Highcharts.options.parsed';
-	HC.callbackParsed = 'Highcharts.callback.parsed';
+	HC.imagesLoaded = 'Highcharts.imagesLoaded:7a7dfcb5df73aaa51e67c9f38c5b07cb';
 	window.imagesLoaded = false;
-	window.optionsParsed = false;
-	window.callbackParsed = false;
 
 	page.onConsoleMessage = function (msg) {
 		console.log(msg);
 		/*
-		 * Ugly hacks, but only way to get messages out of the 'page.evaluate()'
+		 * Ugly hack, but only way to get messages out of the 'page.evaluate()'
 		 * sandbox. If any, please contribute with improvements on this!
 		 */
 		if (msg === HC.imagesLoaded) {
 			window.imagesLoaded = true;
 		}
-
-		/* more ugly hacks, to check options or callback are properly parsed */
-		if (msg === HC.optionsParsed) {
-			window.optionsParsed = true;
-		}
-
-		if (msg === HC.callbackParsed) {
-			window.callbackParsed = true;
-		}
-
 	};
 
 	page.onAlert = function (msg) {
@@ -101,10 +87,9 @@
 
 		var zoom = 1,
 			pageWidth = pick(args.width, svg.width),
-			clipwidth,
-			clipheight;
+			clipwidth, clipheight;
 
-		if (parseInt(pageWidth, 10) === pageWidth) {
+		if (parseInt(pageWidth, 10) == pageWidth) {
 			zoom = pageWidth / svg.width;
 		}
 
@@ -112,7 +97,7 @@
 		scale has precedence : page.zoomFactor = args.scale  ? zoom * args.scale : zoom;*/
 
 		/* args.width has a higher precedence over scaling, to not break backover compatibility */
-		page.zoomFactor = args.scale && args.width === undefined ? zoom * args.scale : zoom;
+		page.zoomFactor = args.scale && args.width == undefined ? zoom * args.scale : zoom;
 
 		clipwidth = svg.width * page.zoomFactor;
 		clipheight = svg.height * page.zoomFactor;
@@ -174,7 +159,7 @@
 			// load chart in page and return svg height and width
 			svg = page.evaluate(function (width, constr, optionsStr, callbackStr, pdfOutput) {
 
-				var imagesLoadedMsg = 'Highcharts.images.loaded', $container, chart,
+				var imagesLoadedMsg = 'Highcharts.imagesLoaded:7a7dfcb5df73aaa51e67c9f38c5b07cb', $container, chart,
 					nodes, nodeIter, elem, opacity;
 
 				// dynamic script insertion
@@ -182,9 +167,6 @@
 					var $script = $('<script>').attr('type', 'text/javascript');
 					$script.html('var ' + varStr + ' = ' + codeStr);
 					document.getElementsByTagName("head")[0].appendChild($script[0]);
-					if (window[varStr] !== undefined) {
-						console.log('Highcharts.' + varStr + '.parsed');
-					}
 				}
 
 				// are all images loaded in time?
@@ -275,16 +257,6 @@
 				};
 
 			}, width, constr, optionsStr, callbackStr, pdfOutput);
-
-			if (!window.optionsParsed) {
-				console.log('ERROR - the options variable was not available, contains the infile an syntax error? see' + input);
-				phantom.exit();
-			}
-
-			if (callback !== undefined && !window.callbackParsed) {
-				console.log('ERROR - the callback variable was not available, contains the callbackfile an syntax error? see' + callback);
-				phantom.exit();
-			}
 
 			try {
 				// save the SVG to output or convert to other formats
